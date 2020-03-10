@@ -34,6 +34,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.LongClickDuration
 import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
+import org.mozilla.fenix.helpers.TestHelper.findNotification
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 
@@ -57,7 +58,7 @@ class BrowserRobot {
         )
         TestAssetHelper.waitingTime
         onView(withId(R.id.mozac_browser_toolbar_url_view))
-                .check(matches(withText(containsString(url))))
+            .check(matches(withText(containsString(url))))
     }
 
     fun verifyHelpUrl() {
@@ -330,8 +331,8 @@ class BrowserRobot {
         }
 
         fun clickClosePrivateTabsNotification(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            mDevice.wait(Until.hasObject(text("Close private tabs")), waitingTime)
-            closePrivateTabsNotification().clickAndWaitForNewWindow(waitingTime)
+            findNotification("Close private tabs")
+            closePrivateTabsNotification().clickAndWaitForNewWindow()
 
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()
@@ -355,10 +356,10 @@ fun navURLBar() = onView(withId(R.id.mozac_browser_toolbar_url_view))
 
 private fun tabsCounter() = onView(withId(R.id.mozac_browser_toolbar_browser_actions))
 
-private fun closePrivateTabsNotification() =
-    mDevice.findObject(UiSelector().text("Close private tabs"))
-
 private fun assertPrivateTabsNotification() {
     mDevice.findObject(UiSelector().text("Firefox Preview (Private)")).exists()
     mDevice.findObject(UiSelector().text("Close private tabs")).exists()
 }
+
+private fun closePrivateTabsNotification() =
+    mDevice.findObject(UiSelector().text("Close private tabs"))

@@ -7,6 +7,7 @@ package org.mozilla.fenix.helpers
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.net.Uri
 import android.os.Build
 import android.preference.PreferenceManager
@@ -16,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.By.text
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
@@ -87,6 +89,33 @@ object TestHelper {
         } catch (ex: ActivityNotFoundException) {
             intent.setPackage(null)
             context.startActivity(intent)
+        }
+    }
+
+    fun findNotification(notificationMessage: String) {
+
+        fun notificationTray() = UiScrollable(
+            UiSelector().resourceId("com.android.systemui:id/notification_stack_scroller")
+        )
+
+        mDevice.wait(
+            Until.hasObject(text(notificationMessage)),
+            TestAssetHelper.waitingTime
+        )
+
+        var notificationFound = false
+        while (!notificationFound) {
+            try {
+                val notification = notificationTray().getChildByText(
+                    UiSelector().resourceId("android:id/status_bar_latest_event_content"),
+                    notificationMessage,
+                    true
+                )
+                notification.exists()
+                notificationFound = true
+            } catch (e: Resources.NotFoundException) {
+                e.printStackTrace()
+            }
         }
     }
 }
