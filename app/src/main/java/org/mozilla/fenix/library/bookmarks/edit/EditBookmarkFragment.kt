@@ -189,7 +189,7 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
     private fun updateBookmarkFromTextChanges() {
         progress_bar_bookmark.visibility = View.VISIBLE
         val nameText = bookmarkNameEdit.text.toString()
-        val urlText = bookmarkUrlEdit.text.toString()
+        val urlText = bookmarkUrlEdit.text?.clearSpans().toString()
         updateBookmarkNode(nameText, urlText)
     }
 
