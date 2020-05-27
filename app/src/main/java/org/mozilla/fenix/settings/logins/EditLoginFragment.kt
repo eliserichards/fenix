@@ -67,7 +67,8 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
                     filteredItems = listOf(),
                     searchedForText = null,
                     sortingStrategy = requireContext().settings().savedLoginsSortingStrategy,
-                    highlightedItem = requireContext().settings().savedLoginsMenuHighlightedItem
+                    highlightedItem = requireContext().settings().savedLoginsMenuHighlightedItem,
+                    dupesExist = false
                 )
             )
         }
@@ -82,7 +83,7 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
         hostnameText.isFocusable = false
 
         usernameText.text = args.savedLoginItem.username.toEditable()
-        passwordText.text = args.savedLoginItem.password!!.toEditable()
+        passwordText.text = args.savedLoginItem.password.toEditable()
 
         // TODO: extend PasswordTransformationMethod() to change bullets to asterisks
         passwordText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -110,6 +111,20 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
             togglePasswordReveal()
         }
     }
+
+    lateinit var hostnameChanged: String
+    lateinit var usernameChanged: String
+    lateinit var passwordChanged: String
+
+    var passwordFocus: Boolean? = null
+    var usernameFocus: Boolean? = null
+    var hostnameFocus: Boolean? = null
+
+    private fun setUpTextListeners() {
+
+    }
+
+
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.login_save, menu)
