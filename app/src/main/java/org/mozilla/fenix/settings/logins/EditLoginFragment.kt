@@ -16,7 +16,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_edit_login.inputLayoutPassword
 import kotlinx.android.synthetic.main.fragment_edit_login.inputLayoutUsername
 import kotlinx.android.synthetic.main.fragment_edit_login.hostnameText
@@ -25,25 +24,30 @@ import kotlinx.android.synthetic.main.fragment_edit_login.passwordText
 import kotlinx.android.synthetic.main.fragment_edit_login.clearUsernameTextButton
 import kotlinx.android.synthetic.main.fragment_edit_login.clearPasswordTextButton
 import kotlinx.android.synthetic.main.fragment_edit_login.revealPasswordButton
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
 import mozilla.components.concept.storage.Login
 import mozilla.components.service.sync.logins.InvalidRecordException
 import mozilla.components.service.sync.logins.LoginsStorageException
 import mozilla.components.service.sync.logins.NoSuchRecordException
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.redirectToReAuth
 import org.mozilla.fenix.ext.settings
+
+
+/**
+ * Interactor for the edit login screen
+ */
+class EditLoginInteractor(private val editLoginController: EditSavedLoginsController) {
+    fun findDupes(item: SavedLogin) {
+        GlobalScope.launch(IO) { editLoginController.findPotentialDuplicates(item) }
+    }
+}
 
 /**
  * Displays the editable saved login information for a single website.
@@ -51,15 +55,22 @@ import org.mozilla.fenix.ext.settings
 @Suppress("TooManyFunctions", "NestedBlockDepth", "ForbiddenComment")
 class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
-    private val args by navArgs<EditLoginFragmentArgs>()
-    private lateinit var savedLoginsStore: LoginsFragmentStore
     fun String.toEditable(): Editable = Editable.Factory.getInstance().newEditable(this)
+
+    private val args by navArgs<EditLoginFragmentArgs>()
+    private lateinit var loginsFragmentStore: LoginsFragmentStore
+    private lateinit var editLoginsInteractor: EditLoginInteractor
+
+    private val oldLogin: SavedLogin = args.savedLoginItem
+    private lateinit var listOfPossibleDupes: List<SavedLogin>
+    private var usernameChanged: Boolean = false
+    private var passwordChanged: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
 
-        savedLoginsStore = StoreProvider.get(this) {
+        loginsFragmentStore = StoreProvider.get(this) {
             LoginsFragmentStore(
                 LoginsListState(
                     isLoading = true,
@@ -68,14 +79,20 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
                     searchedForText = null,
                     sortingStrategy = requireContext().settings().savedLoginsSortingStrategy,
                     highlightedItem = requireContext().settings().savedLoginsMenuHighlightedItem,
-                    dupesExist = false
+                    duplicateLogins = listOf()
                 )
             )
         }
+        val controller = EditSavedLoginsController(
+            context = requireContext(),
+            loginsFragmentStore = loginsFragmentStore
+        )
+        editLoginsInteractor = EditLoginInteractor(controller)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        editLoginsInteractor.findDupes(args.savedLoginItem)
 
         // ensure hostname isn't editable
         hostnameText.text = args.savedLoginItem.origin.toEditable()
@@ -87,8 +104,11 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
         // TODO: extend PasswordTransformationMethod() to change bullets to asterisks
         passwordText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        usernameChanged = false
+        passwordChanged = false
 
         setUpClickListeners()
+        setUpTextListeners()
     }
 
     private fun setUpClickListeners() {
@@ -110,21 +130,70 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
         passwordText.setOnClickListener {
             togglePasswordReveal()
         }
+
+        val frag = view?.findViewById<View>(R.id.editLoginFragment)
+        frag?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                view?.hideKeyboard()
+            }
+        }
     }
 
-    lateinit var hostnameChanged: String
-    lateinit var usernameChanged: String
-    lateinit var passwordChanged: String
-
-    var passwordFocus: Boolean? = null
-    var usernameFocus: Boolean? = null
-    var hostnameFocus: Boolean? = null
 
     private fun setUpTextListeners() {
+        val frag = view?.findViewById<View>(R.id.editLoginFragment)
+        frag?.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                view?.hideKeyboard()
+            }
+        }
 
+        usernameText.onFocusChangeListener = View.OnFocusChangeListener { _, _ ->
+            if (usernameText.text?.toString().equals(oldLogin.username)) {
+                usernameChanged = false
+                inputLayoutUsername.error = null
+            } else if (!(usernameText.text?.toString().equals(oldLogin.username))) {
+                usernameChanged = true
+                setDupeError()
+            }
+        }
+
+        passwordText.onFocusChangeListener = View.OnFocusChangeListener { _, _ ->
+            if (passwordText.text?.toString() == "") {
+                passwordChanged = true
+                setPasswordError()
+            } else if (passwordText.text?.toString().equals(oldLogin.password)) {
+                passwordChanged = false
+                inputLayoutPassword.error = null
+            } else {
+                passwordChanged = true
+                inputLayoutPassword.error = null
+            }
+        }
+
+        listOfPossibleDupes = loginsFragmentStore.state.duplicateLogins
     }
 
+    private fun isDupe(username: String): Boolean =
+        listOfPossibleDupes.filter { oldLogin.username == username }.any()
 
+    private fun setDupeError() {
+        if (isDupe(usernameText.text.toString())) {
+            inputLayoutUsername?.let {
+                it.setErrorIconDrawable(R.drawable.mozac_ic_warning)
+                it.error = context?.getString(R.string.saved_login_duplicate)
+                view?.isSaveEnabled = false
+            }
+        }
+    }
+
+    private fun setPasswordError() {
+        inputLayoutPassword?.let {
+            it.setErrorIconDrawable(R.drawable.mozac_ic_warning)
+            it.error = context?.getString(R.string.saved_login_password_required)
+            view?.isSaveEnabled = false
+        }
+    }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.login_save, menu)
@@ -141,25 +210,17 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.save_login_button -> {
             view?.hideKeyboard()
-            try {
-                if (!passwordText.text.isNullOrBlank()) {
+            if ((usernameChanged || passwordChanged) && view?.isSaveEnabled!!) {
+                try {
                     attemptSaveAndExit()
-                } else {
-                    view?.let {
-                        FenixSnackbar.make(
-                            view = it,
-                            duration = Snackbar.LENGTH_SHORT,
-                            isDisplayedWithBrowserToolbar = false
-                        ).setText(getString(R.string.saved_login_password_required)).show()
+                } catch (loginException: LoginsStorageException) {
+                    when (loginException) {
+                        is NoSuchRecordException,
+                        is InvalidRecordException -> {
+                            Log.e("Edit login", "Failed to save edited login.", loginException)
+                        }
+                        else -> Log.e("Edit login", "Failed to save edited login.", loginException)
                     }
-                }
-            } catch (loginException: LoginsStorageException) {
-                when (loginException) {
-                    is NoSuchRecordException,
-                    is InvalidRecordException -> {
-                        Log.e("Edit login", "Failed to save edited login.", loginException)
-                    }
-                    else -> Log.e("Edit login", "Failed to save edited login.", loginException)
                 }
             }
             true
@@ -173,6 +234,7 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
         var saveLoginJob: Deferred<Unit>? = null
         viewLifecycleOwner.lifecycleScope.launch(IO) {
             saveLoginJob = async {
+                // must retrieve from storage to get the httpsRealm and formActionOrigin
                 val oldLogin = requireContext().components.core.passwordsStorage.get(args.savedLoginItem.guid)
 
                 // Update requires a Login type, which needs at least one of httpRealm or formActionOrigin
@@ -208,7 +270,7 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
     private fun syncAndUpdateList(updatedLogin: Login) {
         val login = updatedLogin.mapToSavedLogin()
-        savedLoginsStore.dispatch(LoginsAction.UpdateLoginsList(listOf(login)))
+        loginsFragmentStore.dispatch(LoginsAction.UpdateLoginsList(listOf(login)))
     }
 
     // TODO: create helper class for toggling passwords. Used in login info and edit fragments.
