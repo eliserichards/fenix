@@ -8,36 +8,32 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.text.method.TextKeyListener
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import kotlinx.android.synthetic.main.fragment_edit_login.inputLayoutPassword
-import kotlinx.android.synthetic.main.fragment_edit_login.inputLayoutUsername
-import kotlinx.android.synthetic.main.fragment_edit_login.hostnameText
-import kotlinx.android.synthetic.main.fragment_edit_login.usernameText
-import kotlinx.android.synthetic.main.fragment_edit_login.passwordText
-import kotlinx.android.synthetic.main.fragment_edit_login.clearUsernameTextButton
-import kotlinx.android.synthetic.main.fragment_edit_login.clearPasswordTextButton
-import kotlinx.android.synthetic.main.fragment_edit_login.revealPasswordButton
-import kotlinx.coroutines.*
+import kotlinx.android.synthetic.main.fragment_edit_login.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.components.concept.storage.Login
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.service.sync.logins.InvalidRecordException
 import mozilla.components.service.sync.logins.LoginsStorageException
 import mozilla.components.service.sync.logins.NoSuchRecordException
-import mozilla.components.support.base.log.logger.Logger.Companion.info
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
@@ -45,16 +41,6 @@ import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.redirectToReAuth
 import org.mozilla.fenix.ext.settings
-
-
-/**
- * Interactor for the edit login screen
- */
-class EditLoginInteractor(private val editLoginController: EditSavedLoginsController) {
-    fun findDupes(item: SavedLogin) {
-        GlobalScope.launch(IO) { editLoginController.findPotentialDuplicates(item) }
-    }
-}
 
 /**
  * Displays the editable saved login information for a single website.
@@ -67,10 +53,9 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
     private val args by navArgs<EditLoginFragmentArgs>()
     private lateinit var loginsFragmentStore: LoginsFragmentStore
-    private lateinit var editLoginsInteractor: EditLoginInteractor
 
     private lateinit var oldLogin: SavedLogin
-    private var listOfPossibleDupes: List<SavedLogin> = listOf()
+    private var listOfPossibleDupes: List<SavedLogin>? = null
     private var usernameChanged: Boolean = false
     private var passwordChanged: Boolean = false
 
@@ -87,35 +72,15 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
                     searchedForText = null,
                     sortingStrategy = requireContext().settings().savedLoginsSortingStrategy,
                     highlightedItem = requireContext().settings().savedLoginsMenuHighlightedItem,
-                    duplicateLogins = listOf()
+                    duplicateLogins = null
                 )
             )
         }
-        val controller = EditSavedLoginsController(
-            context = requireContext(),
-            loginsFragmentStore = loginsFragmentStore
-        )
-        editLoginsInteractor = EditLoginInteractor(controller)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val view = super.onCreateView(inflater, container, savedInstanceState)
         findPotentialDuplicates(args.savedLoginItem)
-        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        consumeFrom(loginsFragmentStore) {
-            listOfPossibleDupes = loginsFragmentStore.state.duplicateLogins
-        }
-
-        Log.d("sdfd", "$listOfPossibleDupes")
 
         // ensure hostname isn't editable
         hostnameText.text = args.savedLoginItem.origin.toEditable()
@@ -132,6 +97,9 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
         setUpClickListeners()
         setUpTextListeners()
+        consumeFrom(loginsFragmentStore) {
+            listOfPossibleDupes = loginsFragmentStore.state.duplicateLogins
+        }
     }
 
     fun findPotentialDuplicates(editedItem: SavedLogin) {
@@ -188,57 +156,53 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
             }
         }
 
-        usernameText.addTextChangedListener(
-            object : TextWatcher {
-                override fun afterTextChanged(s: Editable?) {
-                    // NOOP
-                }
-
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                    // NOOP
-                }
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    if (usernameText.text?.toString().equals(oldLogin.username)) {
-                        usernameChanged = false
-                        inputLayoutUsername.error = null
-                    } else if (!(usernameText.text?.toString().equals(oldLogin.username))) {
-                        usernameChanged = true
-                        setDupeError()
-                    }
+        usernameText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (usernameText.text?.toString().equals(oldLogin.username)) {
+                    usernameChanged = false
+                    inputLayoutUsername.error = null
+                } else if (!(usernameText.text?.toString().equals(oldLogin.username))) {
+                    usernameChanged = true
+                    setDupeError()
                 }
             }
-        )
 
-        passwordText.addTextChangedListener(
-            object : TextWatcher {
-                override fun afterTextChanged(s: Editable?) {
-                    // NOOP
-                }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // NOOP
+            }
 
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                    // NOOP
-                }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // NOOP
+            }
+        })
 
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    if (passwordText.text?.toString() == "") {
-                        passwordChanged = true
-                        setPasswordError()
-                    } else if (passwordText.text?.toString().equals(oldLogin.password)) {
-                        passwordChanged = false
-                        inputLayoutPassword.error = null
-                    } else {
-                        passwordChanged = true
-                        inputLayoutPassword.error = null
-                    }
+        passwordText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                // NOOP
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // NOOP
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (passwordText.text?.toString() == "") {
+                    passwordChanged = true
+                    setPasswordError()
+                } else if (passwordText.text?.toString().equals(oldLogin.password)) {
+                    passwordChanged = false
+                    inputLayoutPassword.error = null
+                } else {
+                    passwordChanged = true
+                    inputLayoutPassword.error = null
                 }
             }
-        )
-
+        })
     }
 
     private fun isDupe(username: String): Boolean =
-        listOfPossibleDupes.filter { it.username == username }.any()
+        loginsFragmentStore.state.duplicateLogins
+            ?.filter { it.username == username }?.any() ?: false
 
     private fun setDupeError() {
         if (isDupe(usernameText.text.toString())) {
@@ -283,9 +247,11 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
                     when (loginException) {
                         is NoSuchRecordException,
                         is InvalidRecordException -> {
-                            Log.e("Edit login", "Failed to save edited login.", loginException)
+                            Log.e("Edit login",
+                                "Failed to save edited login.", loginException)
                         }
-                        else -> Log.e("Edit login", "Failed to save edited login.", loginException)
+                        else -> Log.e("Edit login",
+                            "Failed to save edited login.", loginException)
                     }
                 }
             }
@@ -301,9 +267,11 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
         viewLifecycleOwner.lifecycleScope.launch(IO) {
             saveLoginJob = async {
                 // must retrieve from storage to get the httpsRealm and formActionOrigin
-                val oldLogin = requireContext().components.core.passwordsStorage.get(args.savedLoginItem.guid)
+                val oldLogin =
+                    requireContext().components.core.passwordsStorage.get(args.savedLoginItem.guid)
 
-                // Update requires a Login type, which needs at least one of httpRealm or formActionOrigin
+                // Update requires a Login type, which needs at least one of
+                // httpRealm or formActionOrigin
                 val loginToSave = Login(
                     guid = oldLogin?.guid,
                     origin = oldLogin?.origin!!,
