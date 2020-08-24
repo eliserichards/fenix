@@ -571,7 +571,7 @@ class HomeFragment : Fragment() {
                 val manager = ReviewManagerFactory.create(requireContext())
                 val reviewInfo = manager.requestReview()
                 manager.launchReview(requireActivity(), reviewInfo)
-                
+
                 requireContext().settings().incrementNumTimesFeedbackPromptShown()
             }
         }
