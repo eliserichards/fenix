@@ -54,8 +54,8 @@ class TopSitesTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-            verifyAddFirefoxHome()
-        }.addToFirefoxHome {
+            verifyAddToTopSitesButton()
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {
@@ -73,8 +73,8 @@ class TopSitesTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-            verifyAddFirefoxHome()
-        }.addToFirefoxHome {
+            verifyAddToTopSitesButton()
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {
@@ -104,8 +104,8 @@ class TopSitesTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-            verifyAddFirefoxHome()
-        }.addToFirefoxHome {
+            verifyAddToTopSitesButton()
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {
@@ -128,8 +128,8 @@ class TopSitesTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-            verifyAddFirefoxHome()
-        }.addToFirefoxHome {
+            verifyAddToTopSitesButton()
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {
@@ -152,8 +152,8 @@ class TopSitesTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-            verifyAddFirefoxHome()
-        }.addToFirefoxHome {
+            verifyAddToTopSitesButton()
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {

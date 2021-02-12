@@ -49,33 +49,57 @@ import org.mozilla.fenix.share.ShareFragment
  * Implementation of Robot Pattern for the three dot (main) menu.
  */
 class ThreeDotMenuMainRobot {
-    fun verifyTabSettingsButton() = assertTabSettingsButton()
-    fun verifyRecentlyClosedTabsButton() = assertRecentlyClosedTabsButton()
-    fun verifyShareAllTabsButton() = assertShareAllTabsButton()
-    fun clickShareAllTabsButton() = shareAllTabsButton().click()
-    fun verifySettingsButton() = assertSettingsButton()
-    fun verifyAddOnsButton() = assertAddOnsButton()
-    fun verifyHistoryButton() = assertHistoryButton()
-    fun verifyBookmarksButton() = assertBookmarksButton()
-    fun verifySyncedTabsButton() = assertSyncedTabsButton()
-    fun verifyHelpButton() = assertHelpButton()
     fun verifyThreeDotMenuExists() = threeDotMenuRecyclerViewExists()
+
+    fun verifyTabSettingsButton() = assertTabSettingsButton()
+
+    // navigation
+    fun verifyBackButton() = assertBackButton()
     fun verifyForwardButton() = assertForwardButton()
+    fun verifyShareButton() = assertShareButton()
+    fun verifyRefreshButton() = assertRefreshButton()
+
+    // main menu items
+    fun verifyNewTabButton() = assertNewTabButton()
+    fun verifyBookmarksButton() = assertBookmarksButton()
+    fun verifyHistoryButton() = assertHistoryButton()
+    fun verifyDownloadsButton() = assertDownloadsButton()
+    fun verifyExtensionsButton() = assertAddOnsButton()
+    fun verifySyncedTabsButton() = assertSyncedTabsButton()
+    fun verifyFindInPageButton() = assertFindInPageButton()
+    fun verifyDesktopSiteToggle() = assertDesktopSite()
+    fun verifyAddToMobileHomeButton() = assertAddToDeviceHome()
+    fun verifyAddToTopSitesButton() = assertAddToTopSitesButton()
+    fun verifySaveToCollectionButton() = assertSaveCollectionButton()
+    fun verifySettingsButton() = assertSettingsButton()
+
+    // bookmarks
     fun verifyAddBookmarkButton() = assertAddBookmarkButton()
     fun verifyEditBookmarkButton() = assertEditBookmarkButton()
-    fun verifyRefreshButton() = assertRefreshButton()
-    fun verifyCloseAllTabsButton() = assertCloseAllTabsButton()
-    fun verifyShareButton() = assertShareButton()
+
     fun verifyReaderViewAppearance(visible: Boolean) = assertReaderViewAppearanceButton(visible)
+
+    // TODO make separate robot for tabs tray menu
+    fun verifySelectTabs() = assertSelectTabsButton()
+    fun verifyShareAllTabsButton() = assertShareAllTabsButton()
+    fun verifyRecentlyClosedTabsButton() = assertRecentlyClosedTabsButton()
+    fun verifyCloseAllTabsButton() = assertCloseAllTabsButton()
+    fun verifyShareTabButton() = assertShareTabButton()
+    fun verifySendToDeviceTitle() = assertSendToDeviceTitle()
+
+    fun verifyCollectionNameTextField() = assertCollectionNameTextField()
+
+    // share menus
+    fun verifyShareScrim() = assertShareScrim()
+    fun verifyShareALinkTitle() = assertShareALinkTitle()
+    fun verifyShareTabsOverlay() = assertShareTabsOverlay()
+
+    fun clickShareAllTabsButton() = shareAllTabsButton().click()
 
     fun clickShareButton() {
         shareButton().click()
         mDevice.waitNotNull(Until.findObject(By.text("ALL ACTIONS")), waitingTime)
     }
-
-    fun verifyShareTabButton() = assertShareTabButton()
-    fun verifySaveToCollectionButton() = assertSaveCollectionButton()
-    fun verifySelectTabs() = assertSelectTabsButton()
 
     fun clickSaveCollectionButton() {
         browserViewSaveCollectionButton().click()
@@ -112,25 +136,13 @@ class ThreeDotMenuMainRobot {
         )
     }
 
-    fun verifyCollectionNameTextField() = assertCollectionNameTextField()
-    fun verifyFindInPageButton() = assertFindInPageButton()
-    fun verifyShareScrim() = assertShareScrim()
-    fun verifySendToDeviceTitle() = assertSendToDeviceTitle()
-    fun verifyShareALinkTitle() = assertShareALinkTitle()
-    //fun verifyWhatsNewButton() = assertWhatsNewButton()
-    //fun verifyAddFirefoxHome() = assertAddToFirefoxHome()
-    fun verifyAddToMobileHomeButton() = assertAddToMobileHome()
-    fun verifyDesktopSiteToggle() = assertDesktopSite()
-    fun verifyDownloadsButton() = assertDownloadsButton()
-    fun verifyShareTabsOverlay() = assertShareTabsOverlay()
-
     fun verifyThreeDotMainMenuItems() {
         if (FeatureFlags.toolbarMenuFeature) {
             verifyNewTabButton()
             verifyBookmarksButton()
             verifyHistoryButton()
             verifyDownloadsButton()
-            verifyAddOnsButton() // renamed to extensions
+            verifyExtensionsButton()
             verifySyncedTabsButton()
             verifyFindInPageButton()
             verifyDesktopSiteToggle()
@@ -154,7 +166,6 @@ class ThreeDotMenuMainRobot {
     }
 
     class Transition {
-
         private val mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
         fun openSettings(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
@@ -222,14 +233,6 @@ class ThreeDotMenuMainRobot {
             return LibrarySubMenusMultipleSelectionToolbarRobot.Transition()
         }
 
-        fun openHelp(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            mDevice.waitNotNull(Until.findObject(By.text("Help")), waitingTime)
-            helpButton().click()
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
         fun goForward(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             mDevice.waitNotNull(Until.findObject(By.desc("Forward")), waitingTime)
             forwardButton().click()
@@ -295,14 +298,6 @@ class ThreeDotMenuMainRobot {
             return FindInPageRobot.Transition()
         }
 
-        fun openWhatsNew(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            mDevice.waitNotNull(Until.findObject(By.text("What’s New")), waitingTime)
-            whatsNewButton().click()
-
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
         fun typeCollectionName(
             name: String,
             interact: BrowserRobot.() -> Unit
@@ -330,16 +325,16 @@ class ThreeDotMenuMainRobot {
             return ReaderViewRobot.Transition()
         }
 
-        fun addToFirefoxHome(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            addToFirefoxHomeButton().click()
+        fun addToTopSites(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            addToTopSitesButton().click()
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
 
-        fun openAddToHomeScreen(interact: AddToHomeScreenRobot.() -> Unit): AddToHomeScreenRobot.Transition {
+        fun openAddToDeviceHomeScreen(interact: AddToHomeScreenRobot.() -> Unit): AddToHomeScreenRobot.Transition {
             mDevice.waitNotNull(Until.findObject(By.text("Add to Home screen")), waitingTime)
-            addToHomeScreenButton().click()
+            addToDeviceHomeScreenButton().click()
 
             AddToHomeScreenRobot().interact()
             return AddToHomeScreenRobot.Transition()
@@ -395,8 +390,13 @@ private fun assertSettingsButton() = settingsButton()
     .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
     .check(matches(isCompletelyDisplayed()))
 
-private val addOnsText = if (FeatureFlags.toolbarMenuFeature) "Extensions" else "Add-ons"
-private fun addOnsButton() = onView(allOf(withText(addOnsText)))
+private fun newTabButton() = onView(allOf(withResourceName("text"), withText(R.string.browser_menu_new_tab)))
+private fun assertNewTabButton() {
+    onView(withId(R.id.mozac_browser_menu_menuView)).perform(swipeDown())
+    newTabButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+}
+
+private fun addOnsButton() = onView(allOf(withResourceName("text"), withText(R.string.browser_menu_extensions)))
 private fun assertAddOnsButton() {
     onView(withId(R.id.mozac_browser_menu_menuView)).perform(swipeDown())
     addOnsButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
@@ -414,8 +414,8 @@ private fun syncedTabsButton() = onView(allOf(withText(R.string.library_synced_t
 private fun assertSyncedTabsButton() = syncedTabsButton()
     .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 
-private fun helpButton() = onView(allOf(withText(R.string.browser_menu_help)))
-private fun assertHelpButton() = helpButton()
+private fun backButton() = onView(ViewMatchers.withContentDescription("Back"))
+private fun assertBackButton() = backButton()
     .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 
 private fun forwardButton() = onView(ViewMatchers.withContentDescription("Forward"))
@@ -464,7 +464,7 @@ private fun assertSelectTabsButton() = selectTabsButton()
     .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 
 private fun addNewCollectionButton() = onView(allOf(withText("Add new collection")))
-private fun assertaddNewCollectionButton() = addNewCollectionButton()
+private fun assertAddNewCollectionButton() = addNewCollectionButton()
     .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 
 private fun collectionNameTextField() =
@@ -493,17 +493,7 @@ private fun shareALinkTitle() =
 
 private fun assertShareALinkTitle() = shareALinkTitle()
 
-private fun whatsNewButton() = onView(
-    allOf(
-        withText("What’s New"),
-        withEffectiveVisibility(Visibility.VISIBLE)
-    )
-)
-
-private fun assertWhatsNewButton() = whatsNewButton()
-    .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-
-private fun addToHomeScreenButton() = onView(withText("Add to Home screen"))
+private fun addToDeviceHomeScreenButton() = onView(withText("Add to Home screen"))
 
 private fun readerViewAppearanceToggle() =
     onView(allOf(withText(R.string.browser_menu_read_appearance)))
@@ -513,10 +503,10 @@ private fun assertReaderViewAppearanceButton(visible: Boolean) = readerViewAppea
         if (visible) matches(withEffectiveVisibility(Visibility.VISIBLE)) else ViewAssertions.doesNotExist()
     )
 
-private fun addToFirefoxHomeButton() =
+private fun addToTopSitesButton() =
     onView(allOf(withText(R.string.browser_menu_add_to_top_sites)))
 
-private fun assertAddToFirefoxHome() {
+private fun assertAddToTopSites() {
     onView(withId(R.id.mozac_browser_menu_recyclerView))
         .perform(
             RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
@@ -525,13 +515,20 @@ private fun assertAddToFirefoxHome() {
         ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 }
 
-private fun addToMobileHomeButton() =
-    onView(allOf(withText(R.string.browser_menu_add_to_homescreen)))
-private fun assertAddToMobileHome() {
+private fun assertAddToDeviceHome() {
     onView(withId(R.id.mozac_browser_menu_recyclerView))
         .perform(
             RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
                 hasDescendant(withText(R.string.browser_menu_add_to_homescreen))
+            )
+        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+}
+
+private fun assertAddToTopSitesButton() {
+    onView(withId(R.id.mozac_browser_menu_recyclerView))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                hasDescendant(withText(R.string.browser_menu_add_to_top_sites))
             )
         ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
 }

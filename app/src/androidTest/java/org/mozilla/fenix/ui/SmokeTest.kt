@@ -199,7 +199,6 @@ class SmokeTest {
 
     @Test
     // Verifies the list of items in a tab's 3 dot menu
-    @Ignore("To be re-implemented with the three dot menu changes https://github.com/mozilla-mobile/fenix/issues/17870")
     fun verifyPageMainMenuItemsTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
@@ -275,7 +274,7 @@ class SmokeTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.addToFirefoxHome {
+        }.addToTopSites {
             verifySnackBarText("Added to top sites!")
         }.openTabDrawer {
         }.openNewTab {
@@ -293,13 +292,13 @@ class SmokeTest {
         }.openNavigationToolbar {
         }.enterURLAndEnterToBrowser(website.url) {
         }.openThreeDotMenu {
-        }.openAddToHomeScreen {
+        }.openAddToDeviceHomeScreen {
             clickCancelShortcutButton()
         }
 
         browserScreen {
         }.openThreeDotMenu {
-        }.openAddToHomeScreen {
+        }.openAddToDeviceHomeScreen {
             verifyShortcutNameField("Test_Page_1")
             addShortcutName("Test Page")
             clickAddShortcutButton()
@@ -365,7 +364,6 @@ class SmokeTest {
 
     @Test
     // Turns ETP toggle off from Settings and verifies the ETP shield is not displayed in the nav bar
-    @Ignore("To be re-implemented with the three dot menu changes https://github.com/mozilla-mobile/fenix/issues/17870")
     fun verifyETPShieldNotDisplayedIfOFFGlobally() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 

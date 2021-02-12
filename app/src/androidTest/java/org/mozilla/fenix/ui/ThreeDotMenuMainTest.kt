@@ -55,7 +55,6 @@ class ThreeDotMenuMainTest {
 
     @Test
     fun threeDotMenuItemsTest() {
-        if (FeatureFlags.toolbarMenuFeature) {
             homeScreen {
             }.openThreeDotMenu {
             }.openHistory {
@@ -78,45 +77,5 @@ class ThreeDotMenuMainTest {
             }.goBack {
             }.openThreeDotMenu {
             }.goBack {}
-        } else {
-            homeScreen {
-            }.openThreeDotMenu {
-                verifySettingsButton()
-                verifyBookmarksButton()
-                verifyHistoryButton()
-                verifyHelpButton()
-                verifyWhatsNewButton()
-            }.openSettings {
-                verifySettingsView()
-            }.goBack {
-            }.openThreeDotMenu {
-            }.openHelp {
-                verifyHelpUrl()
-            }.openTabDrawer {
-                closeTab()
-            }
-
-            homeScreen {
-            }.openThreeDotMenu {
-            }.openWhatsNew {
-                verifyWhatsNewURL()
-            }.openTabDrawer {
-                closeTab()
-            }
-
-            homeScreen {
-            }.openThreeDotMenu {
-            }.openBookmarks {
-                verifyBookmarksMenuView()
-            }.closeMenu {
-            }
-
-            homeScreen {
-            }.openThreeDotMenu {
-            }.openHistory {
-                verifyHistoryMenuView()
-            }
-        }
-
     }
 }

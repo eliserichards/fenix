@@ -300,7 +300,7 @@ class SettingsPrivacyTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.openAddToHomeScreen {
+        }.openAddToDeviceHomeScreen {
             addShortcutName(pageShortcutName)
             clickAddShortcutButton()
             clickAddAutomaticallyButton()
@@ -319,7 +319,7 @@ class SettingsPrivacyTest {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.openAddToHomeScreen {
+        }.openAddToDeviceHomeScreen {
             addShortcutName(pageShortcutName)
             clickAddShortcutButton()
             clickAddAutomaticallyButton()
