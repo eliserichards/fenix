@@ -74,7 +74,7 @@ class ThreeDotMenuMainRobot {
     }
 
     fun verifyShareTabButton() = assertShareTabButton()
-    fun verifySaveCollection() = assertSaveCollectionButton()
+    fun verifySaveToCollectionButton() = assertSaveCollectionButton()
     fun verifySelectTabs() = assertSelectTabsButton()
 
     fun clickSaveCollectionButton() {
@@ -117,39 +117,31 @@ class ThreeDotMenuMainRobot {
     fun verifyShareScrim() = assertShareScrim()
     fun verifySendToDeviceTitle() = assertSendToDeviceTitle()
     fun verifyShareALinkTitle() = assertShareALinkTitle()
-    fun verifyWhatsNewButton() = assertWhatsNewButton()
-    fun verifyAddFirefoxHome() = assertAddToFirefoxHome()
-    fun verifyAddToMobileHome() = assertAddToMobileHome()
-    fun verifyDesktopSite() = assertDesktopSite()
+    //fun verifyWhatsNewButton() = assertWhatsNewButton()
+    //fun verifyAddFirefoxHome() = assertAddToFirefoxHome()
+    fun verifyAddToMobileHomeButton() = assertAddToMobileHome()
+    fun verifyDesktopSiteToggle() = assertDesktopSite()
     fun verifyDownloadsButton() = assertDownloadsButton()
     fun verifyShareTabsOverlay() = assertShareTabsOverlay()
 
     fun verifyThreeDotMainMenuItems() {
         if (FeatureFlags.toolbarMenuFeature) {
-            verifyDownloadsButton()
-            verifyHistoryButton()
+            verifyNewTabButton()
             verifyBookmarksButton()
-            verifySettingsButton()
-            verifyDesktopSite()
-            verifySaveCollection()
-            verifyShareButton()
-            verifyForwardButton()
-            verifyRefreshButton()
-        } else {
-            verifyAddOnsButton()
-            verifyDownloadsButton()
             verifyHistoryButton()
-            verifyBookmarksButton()
+            verifyDownloadsButton()
+            verifyAddOnsButton() // renamed to extensions
             verifySyncedTabsButton()
-            verifySettingsButton()
             verifyFindInPageButton()
-            verifyAddFirefoxHome()
-            verifyAddToMobileHome()
-            verifyDesktopSite()
-            verifySaveCollection()
-            verifyAddBookmarkButton()
-            verifyShareButton()
+            verifyDesktopSiteToggle()
+            verifyAddToMobileHomeButton()
+            verifyAddToTopSitesButton()
+            verifySaveToCollectionButton()
+            verifySettingsButton()
+            // navigation
+            verifyBackButton()
             verifyForwardButton()
+            verifyShareButton()
             verifyRefreshButton()
         }
     }
