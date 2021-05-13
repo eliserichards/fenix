@@ -22,7 +22,7 @@ import org.mozilla.fenix.settings.requirePreference
  */
 abstract class BiometricPromptHelper : PreferenceFragmentCompat() {
 
-    private val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
+    internal val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
 
     /**
      * Gets the string to be used for [BiometricPromptFeature.requestAuthentication] prompting to

@@ -99,7 +99,6 @@ class CreditCardsManagementFragment : Fragment() {
         super.onPause()
     }
 
-
     /**
      * Fetches all the credit cards from the autofill storage and updates the
      * [CreditCardsFragmentStore] with the list of credit cards.
