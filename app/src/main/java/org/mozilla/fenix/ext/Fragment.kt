@@ -71,6 +71,19 @@ fun Fragment.redirectToReAuth(destinations: List<Int>, currentDestination: Int?)
     }
 }
 
+/**
+ * Pops the backstack to force users to re-auth if they put the app in the background and return to
+ * it while being inside the Credit Card flow
+ *
+ * Does nothing if the user is currently navigating to any of the [destinations] given as a parameter
+ *
+ */
+fun Fragment.redirectToCreditCardReAuth(destinations: List<Int>, currentDestination: Int?) {
+    if (currentDestination !in destinations) {
+        findNavController().popBackStack(R.id.creditCardsSettingFragment, false)
+    }
+}
+
 fun Fragment.breadcrumb(
     message: String,
     data: Map<String, String> = emptyMap()

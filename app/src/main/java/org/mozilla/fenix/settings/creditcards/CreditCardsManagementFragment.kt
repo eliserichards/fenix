@@ -24,7 +24,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.redirectToReAuth
+import org.mozilla.fenix.ext.redirectToCreditCardReAuth
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.creditcards.controller.DefaultCreditCardsManagementController
 import org.mozilla.fenix.settings.creditcards.interactor.CreditCardsManagementInteractor
@@ -82,17 +82,19 @@ class CreditCardsManagementFragment : Fragment() {
     }
 
     /**
-     * If we pause this fragment, we want to pop users back to reauthenticate.
+     * If we pause this fragment, we want to pop users back to the settings page to reauthenticate.
      */
     override fun onPause() {
         toolbarChildContainer.removeAllViews()
         toolbarChildContainer.visibility = View.GONE
 
-        (activity as HomeActivity).getSupportActionBarAndInflateIfNecessary().setDisplayShowTitleEnabled(true)
+        (activity as HomeActivity).getSupportActionBarAndInflateIfNecessary()
+            .setDisplayShowTitleEnabled(true)
         setHasOptionsMenu(false)
 
-        redirectToReAuth(
-            listOf(R.id.creditCardsManagementFragment),
+        // don't redirect if the user is navigating to the editor fragment
+        redirectToCreditCardReAuth(
+            listOf(R.id.creditCardEditorFragment),
             findNavController().currentDestination?.id
         )
 

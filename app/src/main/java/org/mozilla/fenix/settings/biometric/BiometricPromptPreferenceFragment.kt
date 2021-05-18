@@ -17,10 +17,10 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.requirePreference
 
 /**
- * Helper class for creating and implementing the [BiometricPromptFeature]. Currently used
+ * Helper for creating and implementing the [BiometricPromptFeature]. Currently used
  * for logins and credit cards.
  */
-abstract class BiometricPromptHelper : PreferenceFragmentCompat() {
+abstract class BiometricPromptPreferenceFragment : PreferenceFragmentCompat() {
 
     internal val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
 

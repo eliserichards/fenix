@@ -35,7 +35,7 @@ import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SyncPreferenceView
-import org.mozilla.fenix.settings.biometric.BiometricPromptHelper
+import org.mozilla.fenix.settings.biometric.BiometricPromptPreferenceFragment
 import org.mozilla.fenix.settings.requirePreference
 
 /**
@@ -44,7 +44,7 @@ import org.mozilla.fenix.settings.requirePreference
  * or [KeyguardManager] (similar to [SavedLoginsAuthFragment]).
  */
 @SuppressWarnings("TooManyFunctions")
-class CreditCardsSettingFragment : BiometricPromptHelper() {
+class CreditCardsSettingFragment : BiometricPromptPreferenceFragment() {
 
     private lateinit var creditCardsStore: CreditCardsFragmentStore
     private var isCreditCardsListLoaded: Boolean = false
@@ -123,7 +123,7 @@ class CreditCardsSettingFragment : BiometricPromptHelper() {
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         when (preference.key) {
             getPreferenceKey(R.string.pref_key_credit_cards_add_credit_card) -> {
-                navigateToCreditCardEditFragment()
+                navigateToCreditCardEditorFragment()
             }
             getPreferenceKey(R.string.pref_key_credit_cards_manage_saved_cards) -> {
                 verifyCredentialsOrShowSetupWarning(preference.context, creditCardPreferences)
@@ -203,7 +203,7 @@ class CreditCardsSettingFragment : BiometricPromptHelper() {
             getString(R.string.credit_cards_biometric_prompt_message_pin),
             getString(R.string.credit_cards_biometric_prompt_message)
         )
-        startActivityForResult(intent, BiometricPromptHelper.PIN_REQUEST)
+        startActivityForResult(intent, BiometricPromptPreferenceFragment.PIN_REQUEST)
     }
 
     /**
@@ -235,7 +235,7 @@ class CreditCardsSettingFragment : BiometricPromptHelper() {
         findNavController().navigateBlockingForAsyncNavGraph(directions)
     }
 
-    private fun navigateToCreditCardEditFragment() {
+    private fun navigateToCreditCardEditorFragment() {
         val directions =
             CreditCardsSettingFragmentDirections
                 .actionCreditCardsSettingFragmentToCreditCardEditorFragment()
