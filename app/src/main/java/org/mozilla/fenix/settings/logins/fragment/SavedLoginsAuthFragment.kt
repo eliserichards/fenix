@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings.logins.fragment
 
-import android.app.Activity.RESULT_OK
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.DialogInterface
@@ -13,17 +12,14 @@ import android.os.Bundle
 import android.provider.Settings.ACTION_SECURITY_SETTINGS
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mozilla.components.service.fxa.SyncEngine
-import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.ext.components
@@ -35,29 +31,27 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
-import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
+import org.mozilla.fenix.settings.biometric.BiometricPromptPreferenceFragment
 import org.mozilla.fenix.settings.requirePreference
 
-@Suppress("TooManyFunctions")
-class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
-
-    private val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.logins_preferences, rootKey)
-    }
+class SavedLoginsAuthFragment : BiometricPromptPreferenceFragment() {
 
     /**
-     * There is a bug where while the biometric prompt is showing, you were able to quickly navigate
-     * so we are disabling the settings that navigate while authenticating.
-     * https://github.com/mozilla-mobile/fenix/issues/12312
+     * Used for toggling preferences on/off during authentication
      */
-    private fun togglePrefsEnabledWhileAuthenticating(enabled: Boolean) {
-        requirePreference<Preference>(R.string.pref_key_sync_logins).isEnabled = enabled
-        requirePreference<Preference>(R.string.pref_key_save_logins_settings).isEnabled = enabled
-        requirePreference<Preference>(R.string.pref_key_saved_logins).isEnabled = enabled
-    }
+    private val loginsPreferences = listOf(
+        R.string.pref_key_sync_logins,
+        R.string.pref_key_save_logins_settings,
+        R.string.pref_key_saved_logins
+    )
 
+    override fun unlockMessage() = getString(R.string.logins_biometric_prompt_message)
+
+    override fun navigateOnSuccess() = navigateToSavedLogins()
+
+    /**
+     * Navigates to the [SavedLoginsFragment] with a slight delay.
+     */
     private fun navigateToSavedLogins() {
         runIfFragmentIsAttached {
             viewLifecycleOwner.lifecycleScope.launch(Main) {
@@ -69,19 +63,14 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
         }
     }
 
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.logins_preferences, rootKey)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        biometricPromptFeature.set(
-            feature = BiometricPromptFeature(
-                context = requireContext(),
-                fragment = this,
-                onAuthFailure = { togglePrefsEnabledWhileAuthenticating(true) },
-                onAuthSuccess = ::navigateToSavedLogins
-            ),
-            owner = this,
-            view = view
-        )
+        setBiometricPrompt(view, loginsPreferences)
     }
 
     override fun onResume() {
@@ -119,7 +108,7 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<Preference>(R.string.pref_key_saved_logins).setOnPreferenceClickListener {
-            verifyCredentialsOrShowSetupWarning(it.context)
+            verifyCredentialsOrShowSetupWarning(it.context, loginsPreferences)
             true
         }
 
@@ -144,33 +133,14 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
             }
         )
 
-        togglePrefsEnabledWhileAuthenticating(true)
+        togglePrefsEnabledWhileAuthenticating(loginsPreferences, true)
     }
 
-    private fun verifyCredentialsOrShowSetupWarning(context: Context) {
-        // Use the BiometricPrompt first
-        if (BiometricPromptFeature.canUseFeature(context)) {
-            togglePrefsEnabledWhileAuthenticating(false)
-            biometricPromptFeature.get()
-                ?.requestAuthentication(getString(R.string.logins_biometric_prompt_message))
-            return
-        }
-
-        // Fallback to prompting for password with the KeyguardManager
-        val manager = context.getSystemService<KeyguardManager>()
-        if (manager?.isKeyguardSecure == true) {
-            showPinVerification(manager)
-        } else {
-            // Warn that the device has not been secured
-            if (context.settings().shouldShowSecurityPinWarning) {
-                showPinDialogWarning(context)
-            } else {
-                navigateToSavedLoginsFragment()
-            }
-        }
-    }
-
-    private fun showPinDialogWarning(context: Context) {
+    /**
+     * Show a warning to set up a pin/password when the device is not secured. This is only used
+     * when BiometricPrompt is unavailable on the device.
+     */
+    override fun showPinDialogWarning(context: Context) {
         AlertDialog.Builder(context).apply {
             setTitle(getString(R.string.logins_warning_dialog_title))
             setMessage(
@@ -191,19 +161,19 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat() {
         context.settings().incrementShowLoginsSecureWarningCount()
     }
 
-    @Suppress("Deprecation") // This is only used when BiometricPrompt is unavailable
-    private fun showPinVerification(manager: KeyguardManager) {
+    /**
+     * Create a prompt to confirm the device's pin/password and start activity based on the result.
+     * This is only used when BiometricPrompt is unavailable on the device.
+     *
+     * @param manager The device [KeyguardManager]
+     */
+    @Suppress("Deprecation")
+    override fun showPinVerification(manager: KeyguardManager) {
         val intent = manager.createConfirmDeviceCredentialIntent(
             getString(R.string.logins_biometric_prompt_message_pin),
             getString(R.string.logins_biometric_prompt_message)
         )
         startActivityForResult(intent, PIN_REQUEST)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == PIN_REQUEST && resultCode == RESULT_OK) {
-            navigateToSavedLoginsFragment()
-        }
     }
 
     /**
