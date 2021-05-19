@@ -27,4 +27,14 @@
         android:visibility="gone"
         tools:listitem="@layout/credit_card_list_item" />
 
+    <TextView
+        android:id="@+id/add_new_card_button"
+        style="@style/CreditCardAddButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/preferences_credit_cards_add_credit_card"
+        android:clickable="true"
+        android:focusable="true"
+        app:drawableStartCompat="@drawable/ic_new" />
+
 </FrameLayout>

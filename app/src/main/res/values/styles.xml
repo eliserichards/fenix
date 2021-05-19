@@ -630,4 +630,20 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
+    <style name="CreditCardAddButtonStyle">
+        <item name="android:colorControlNormal">?accentHighContrast</item>
+        <item name="android:colorControlActivated">?accentHighContrast</item>
+        <item name="android:colorControlHighlight">?accentBright</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:paddingStart">@dimen/credit_cards_add_credit_card_drawable_padding_start</item>
+        <item name="android:paddingTop">@dimen/credit_cards_add_credit_card_text_vertical_padding</item>
+        <item name="android:paddingBottom">@dimen/credit_cards_add_credit_card_text_vertical_padding</item>
+        <item name="android:textAppearance">?android:attr/textAppearanceListItem</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textSize">@dimen/credit_cards_add_credit_card_text_size</item>
+        <item name="android:drawablePadding">@dimen/credit_cards_add_credit_card_drawable_padding_end</item>
+        <item name="drawableTint">?primaryText</item>
+    </style>
 </resources>
