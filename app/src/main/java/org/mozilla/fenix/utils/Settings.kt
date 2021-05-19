@@ -856,6 +856,11 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = true
     )
 
+    var shouldAutofillCreditCards by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
+        default = false
+    )
+
     var fxaHasSyncedItems by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_fxa_has_synced_items),
         default = false

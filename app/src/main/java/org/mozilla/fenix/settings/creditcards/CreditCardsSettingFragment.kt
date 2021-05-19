@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -21,10 +22,13 @@ import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.service.fxa.SyncEngine
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.navigateBlockingForAsyncNavGraph
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
 import org.mozilla.fenix.settings.requirePreference
 
@@ -75,6 +79,20 @@ class CreditCardsSettingFragment : PreferenceFragmentCompat() {
         super.onResume()
 
         showToolbar(getString(R.string.preferences_credit_cards))
+
+        requirePreference<SwitchPreference>(
+            R.string.pref_key_credit_cards_save_and_autofill_cards
+        ).apply {
+            isChecked = context.settings().shouldAutofillCreditCards
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    // what is the engine setting?
+                    context.components.core.engine.settings. =
+                        newValue as Boolean
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
+        }
 
         SyncPreferenceView(
             syncPreference = requirePreference(R.string.pref_key_credit_cards_sync_cards_across_devices),
